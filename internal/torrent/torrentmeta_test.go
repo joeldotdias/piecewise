@@ -1,6 +1,7 @@
 package torrent_test
 
 import (
+	"fmt"
 	"piecewise/internal/torrent"
 	"testing"
 
@@ -19,4 +20,6 @@ func TestReadFrom(t *testing.T) {
 
 	emptyHash := [20]byte{}
 	require.NotEqual(t, emptyHash, got.InfoHash, "InfoHash couldn't be calculated")
+
+	fmt.Println(got)
 }
