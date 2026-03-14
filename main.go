@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
+	"piecewise/internal/p2p"
 	"piecewise/internal/torrent"
 )
 
@@ -35,5 +37,38 @@ func main() {
 
 	for i := 0; i < min(100, len(peers)); i++ {
 		fmt.Printf("\tPeer %d: %s:%d\n", i+1, peers[i].IP, peers[i].Port)
+	}
+
+	var activeConn net.Conn
+
+	for _, peer := range peers {
+		fmt.Printf("dialing: %s:%d...\n", peer.IP, peer.Port)
+
+		conn, err := p2p.DialPeer(peer.IP, peer.Port, meta.InfoHash, peerId)
+		if err != nil {
+			fmt.Printf("\t-> failed: %v\n", err)
+			continue
+		}
+
+		fmt.Printf("\t-> woohoo! handhshake done with %s\n", peer.IP)
+		activeConn = conn
+
+		client := p2p.Client{
+			Conn:   conn,
+			Choked: true,
+		}
+
+		err = client.ReadLoop()
+		if err != nil {
+			fmt.Printf("\t-> peer disconnected: %v\n", err)
+		}
+
+		break
+	}
+
+	if activeConn == nil {
+		log.Fatalf("\ncouldn't connect to any peers")
+	} else {
+		activeConn.Close()
 	}
 }
