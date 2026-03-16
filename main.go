@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"net"
+	"os"
 	"piecewise/internal/p2p"
 	"piecewise/internal/torrent"
 )
@@ -39,36 +39,30 @@ func main() {
 		fmt.Printf("\tPeer %d: %s:%d\n", i+1, peers[i].IP, peers[i].Port)
 	}
 
-	var activeConn net.Conn
+	workQueue := p2p.InitWorkQueue(&meta)
+	results := make(chan *p2p.PieceResult)
+
+	outFile, err := os.Create(meta.Name)
+	if err != nil {
+		log.Fatalf("couldn't create output file: %v", err)
+	}
+	defer outFile.Close()
 
 	for _, peer := range peers {
-		fmt.Printf("dialing: %s:%d...\n", peer.IP, peer.Port)
-
-		conn, err := p2p.DialPeer(peer.IP, peer.Port, meta.InfoHash, peerId)
-		if err != nil {
-			fmt.Printf("\t-> failed: %v\n", err)
-			continue
-		}
-
-		fmt.Printf("\t-> woohoo! handhshake done with %s\n", peer.IP)
-		activeConn = conn
-
-		client := p2p.Client{
-			Conn:   conn,
-			Choked: true,
-		}
-
-		err = client.ReadLoop()
-		if err != nil {
-			fmt.Printf("\t-> peer disconnected: %v\n", err)
-		}
-
-		break
+		go p2p.StartWorker(peer, meta.InfoHash, peerId, workQueue, results)
 	}
 
-	if activeConn == nil {
-		log.Fatalf("\ncouldn't connect to any peers")
-	} else {
-		activeConn.Close()
+	for done := 0; done < len(meta.PieceHashes); done++ {
+		res := <-results
+		offset := int64(res.Index * meta.PieceLength)
+
+		_, err = outFile.WriteAt(res.Buf, offset)
+		if err != nil {
+			log.Fatalf("couldn't write piece %d to disk : %v", res.Index, err)
+		}
+
+		fmt.Printf("\npiece %d got saved!!!!!!! (%d / %d)\n", res.Index, done+1, len(meta.PieceHashes))
 	}
+
+	fmt.Println("\nwhoop whoop just downloaded an entire file!!!!")
 }
