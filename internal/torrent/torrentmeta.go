@@ -64,11 +64,25 @@ func ReadFrom(path string) (TorrentMeta, error) {
 
 	meta.InfoHash = sha1.Sum(bencodedInfo)
 
-	length, ok := info["length"].(int64)
-	if !ok {
-		return meta, fmt.Errorf("weird 'length'")
+	if length, ok := info["length"].(int64); ok {
+		meta.Length = int(length)
+	} else if files, ok := info["files"].([]any); ok {
+		var totalLength int
+		for _, file := range files {
+			fileMap, ok := file.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			if fileLength, ok := fileMap["length"].(int64); ok {
+				totalLength += int(fileLength)
+			}
+		}
+
+		meta.Length = totalLength
+	} else {
+		return meta, fmt.Errorf("weird 'length': neither single nor multi file structure")
 	}
-	meta.Length = int(length)
 
 	pieceLength, ok := info["piece length"].(int64)
 	if !ok {

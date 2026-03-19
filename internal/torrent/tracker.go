@@ -10,7 +10,7 @@ import (
 
 type TrackerResponse struct {
 	Interval int
-	Peers    string
+	Peers    any //string
 }
 
 func RequestPeers(trackerUrl string) (TrackerResponse, error) {
@@ -42,9 +42,9 @@ func RequestPeers(trackerUrl string) (TrackerResponse, error) {
 	}
 	tr.Interval = int(interval)
 
-	peers, ok := decoded["peers"].(string)
+	peers, ok := decoded["peers"] //.(string)
 	if !ok {
-		return tr, fmt.Errorf("weird 'peers'")
+		return tr, fmt.Errorf("weird 'peers': missing from response")
 	}
 	tr.Peers = peers
 

@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	meta, err := torrent.ReadFrom("internal/torrent/testdata/debian-13.3.0-amd64-DVD-1.iso.torrent")
+	meta, err := torrent.ReadFrom("internal/torrent/testdata/debian-13.3.0-amd64-DVD-1.iso.torrent") // compact str torrent
+	// meta, err := torrent.ReadFrom("ComputerNetworks.pdf-958e2487d2db5f41f9c056bb35cf547edf38528f.torrent") // dict torrent
 	if err != nil {
 		log.Fatalf("couldn't read torrent file: %v", err)
 	}
@@ -28,7 +29,8 @@ func main() {
 		log.Fatalf("couldn't request peers: %v", err)
 	}
 
-	peers, err := torrent.UnmarshalPeers([]byte(trackerRes.Peers))
+	// peers, err := torrent.UnmarshalPeers([]byte(trackerRes.Peers))
+	peers, err := torrent.UnmarshalPeers(trackerRes.Peers)
 	if err != nil {
 		log.Fatalf("couuldn't unmarshall peers: %v", err)
 	}
