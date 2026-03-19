@@ -9,8 +9,9 @@ import (
 )
 
 func main() {
-	meta, err := torrent.ReadFrom("internal/torrent/testdata/debian-13.3.0-amd64-DVD-1.iso.torrent") // compact str torrent
-	// meta, err := torrent.ReadFrom("ComputerNetworks.pdf-958e2487d2db5f41f9c056bb35cf547edf38528f.torrent") // dict torrent
+	// meta, err := torrent.ReadFrom("internal/torrent/testdata/debian-13.3.0-amd64-DVD-1.iso.torrent") // compact str torrent
+	meta, err := torrent.ReadFrom("./debian-13.4.0-amd64-netinst.iso.torrent")
+	// ComputerNetworks.pdf-958e2487d2db5f41f9c056bb35cf547edf38528f.torrent") // dict torrent
 	if err != nil {
 		log.Fatalf("couldn't read torrent file: %v", err)
 	}

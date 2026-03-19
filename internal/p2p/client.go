@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"time"
 )
 
 const MaxBlockSize = 16384 // 16 KB
@@ -52,6 +53,8 @@ func (c *Client) ReadLoop(work *PieceWork) ([]byte, error) {
 	}
 
 	for {
+		c.Conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+
 		msg, err := ReadMessage(c.Conn)
 		if err != nil {
 			return nil, err

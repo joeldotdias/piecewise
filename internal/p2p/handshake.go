@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+const (
+	handshakeLen = 68
+	pstrLen      = 19
+)
+
 type Handshake struct {
 	Pstr     string
 	Reserved [8]byte
@@ -67,7 +72,7 @@ func ReadHandshake(r io.Reader) (Handshake, error) {
 		return h, fmt.Errorf("couldn't read handshake body: \n\t%w", err)
 	}
 
-	h.Pstr = string(handshakeBuf[0:19])
+	h.Pstr = string(handshakeBuf[0:pstrLen])
 	copy(h.InfoHash[:], handshakeBuf[27:47])
 	copy(h.PeerId[:], handshakeBuf[47:67])
 
@@ -75,10 +80,10 @@ func ReadHandshake(r io.Reader) (Handshake, error) {
 }
 
 func (h *Handshake) Serialize() []byte {
-	buf := make([]byte, 68)
+	buf := make([]byte, handshakeLen)
 
 	buf[0] = byte(len(h.Pstr))
-	copy(buf[1:20], h.Pstr)
+	copy(buf[1:1+pstrLen], h.Pstr)
 	copy(buf[28:48], h.InfoHash[:])
 	copy(buf[48:68], h.PeerId[:])
 
