@@ -11,7 +11,6 @@ import (
 func main() {
 	// meta, err := torrent.ReadFrom("internal/torrent/testdata/debian-13.3.0-amd64-DVD-1.iso.torrent") // compact str torrent
 	meta, err := torrent.ReadFrom("./debian-13.4.0-amd64-netinst.iso.torrent")
-	// ComputerNetworks.pdf-958e2487d2db5f41f9c056bb35cf547edf38528f.torrent") // dict torrent
 	if err != nil {
 		log.Fatalf("couldn't read torrent file: %v", err)
 	}
@@ -42,7 +41,8 @@ func main() {
 		fmt.Printf("\tPeer %d: %s:%d\n", i+1, peers[i].IP, peers[i].Port)
 	}
 
-	workQueue := p2p.InitWorkQueue(&meta)
+	// workQueue := p2p.InitWorkQueue(&meta)
+	tracker := p2p.NewPieceTracker(len(meta.PieceHashes))
 	results := make(chan *p2p.PieceResult)
 
 	outFile, err := os.Create(meta.Name)
@@ -52,7 +52,8 @@ func main() {
 	defer outFile.Close()
 
 	for _, peer := range peers {
-		go p2p.StartWorker(peer, meta.InfoHash, peerId, workQueue, results)
+		// go p2p.StartWorker(peer, meta.InfoHash, peerId, workQueue, results)
+		go p2p.StartWorker(peer, &meta, peerId, &tracker, results)
 	}
 
 	for done := 0; done < len(meta.PieceHashes); done++ {
@@ -64,6 +65,7 @@ func main() {
 			log.Fatalf("couldn't write piece %d to disk : %v", res.Index, err)
 		}
 
+		tracker.MarkDownloaded(res.Index)
 		fmt.Printf("\npiece %d got saved!!!!!!! (%d / %d)\n", res.Index, done+1, len(meta.PieceHashes))
 	}
 

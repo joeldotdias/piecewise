@@ -171,6 +171,27 @@ func ParsePiecePayload(payload []byte) (Piece, error) {
 	return piece, nil
 }
 
+func (c *Client) ReadInitialState(tracker *PieceTracker) error {
+	c.Conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	defer c.Conn.SetReadDeadline(time.Time{})
+
+	msg, err := ReadMessage(c.Conn)
+	if err != nil {
+		return err
+	}
+
+	if msg != nil && msg.Id == MsgBitfield {
+		c.Bitfield = Bitfield(msg.Payload)
+		tracker.AddPeerBitfield(c.Bitfield)
+	}
+
+	// leechers don't have to always send a bitfield message in the start
+	// so i think its fine not to return an error even if the first message
+	// is not bitfield
+
+	return nil
+}
+
 func (c *Client) SendInterested() error {
 	msg := Message{
 		Id: MsgInterested,
