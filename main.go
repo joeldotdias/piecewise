@@ -56,18 +56,37 @@ func main() {
 		go p2p.StartWorker(peer, &meta, peerId, &tracker, results)
 	}
 
-	for done := 0; done < len(meta.PieceHashes); done++ {
+	done := 0
+	for done < len(meta.PieceHashes) {
 		res := <-results
-		offset := int64(res.Index * meta.PieceLength)
 
-		_, err = outFile.WriteAt(res.Buf, offset)
-		if err != nil {
-			log.Fatalf("couldn't write piece %d to disk : %v", res.Index, err)
+		if tracker.MarkDownloaded(res.Index) {
+			offset := int64(res.Index * meta.PieceLength)
+
+			_, err = outFile.WriteAt(res.Buf, offset)
+			if err != nil {
+				log.Fatalf("couldn't write piece %d to disk : %v", res.Index, err)
+			}
+
+			done++
+			fmt.Printf("\npiece %d got saved!!!!!!! (%d / %d)\n", res.Index, done+1, len(meta.PieceHashes))
+		} else {
+			fmt.Printf("\nignoring duplicate piece %d\n", res.Index)
 		}
-
-		tracker.MarkDownloaded(res.Index)
-		fmt.Printf("\npiece %d got saved!!!!!!! (%d / %d)\n", res.Index, done+1, len(meta.PieceHashes))
 	}
+
+	// for done := 0; done < len(meta.PieceHashes); done++ {
+	// 	res := <-results
+	// 	offset := int64(res.Index * meta.PieceLength)
+	//
+	// 	_, err = outFile.WriteAt(res.Buf, offset)
+	// 	if err != nil {
+	// 		log.Fatalf("couldn't write piece %d to disk : %v", res.Index, err)
+	// 	}
+	//
+	// 	tracker.MarkDownloaded(res.Index)
+	// 	fmt.Printf("\npiece %d got saved!!!!!!! (%d / %d)\n", res.Index, done+1, len(meta.PieceHashes))
+	// }
 
 	fmt.Println("\nwhoop whoop just downloaded an entire file!!!!")
 }

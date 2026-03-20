@@ -39,7 +39,7 @@ type PieceProgress struct {
 	hash       [20]byte // expected hash of the current piece
 }
 
-func (c *Client) ReadLoop(work *PieceWork) ([]byte, error) {
+func (c *Client) ReadLoop(work *PieceWork, tracker *PieceTracker) ([]byte, error) {
 	err := c.SendInterested()
 	if err != nil {
 		return nil, err
@@ -53,6 +53,11 @@ func (c *Client) ReadLoop(work *PieceWork) ([]byte, error) {
 	}
 
 	for {
+		if tracker.IsDownloaded(work.index) {
+			state.cancelInFlight()
+			return nil, fmt.Errorf("endgame abort: piece %d already downloaded", work.index)
+		}
+
 		c.Conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 
 		msg, err := ReadMessage(c.Conn)
@@ -133,6 +138,22 @@ func (state *PieceProgress) requestBlocks() {
 	}
 }
 
+func (state *PieceProgress) cancelInFlight() {
+	currOffset := state.downloaded
+
+	for currOffset < state.requested {
+		bytesLeft := len(state.buf) - currOffset
+		blockSize := min(bytesLeft, MaxBlockSize)
+
+		err := state.client.SendCancel(state.index, currOffset, blockSize)
+		if err != nil {
+			fmt.Printf("couldn't send cancel: %v\n", err)
+		}
+
+		currOffset += blockSize
+	}
+}
+
 func (state *PieceProgress) verify() error {
 	check := sha1.Sum(state.buf)
 
@@ -203,6 +224,20 @@ func (c *Client) SendInterested() error {
 func (c *Client) SendNotInterested() error {
 	msg := Message{
 		Id: MsgNotInterested,
+	}
+
+	return c.sendMessage(&msg)
+}
+
+func (c *Client) SendCancel(index, begin, length int) error {
+	payload := make([]byte, 12)
+	binary.BigEndian.PutUint32(payload[0:4], uint32(index))
+	binary.BigEndian.PutUint32(payload[4:8], uint32(begin))
+	binary.BigEndian.PutUint32(payload[8:12], uint32(length))
+
+	msg := Message{
+		Id:      MsgCancel,
+		Payload: payload,
 	}
 
 	return c.sendMessage(&msg)
