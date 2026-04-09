@@ -51,7 +51,7 @@ func RequestPeers(trackerUrl string) (TrackerResponse, error) {
 	return tr, nil
 }
 
-func BuildTrackerURL(meta *TorrentMeta, peerId [20]byte) (string, error) {
+func BuildTrackerURL(meta *TorrentMeta, peerId [20]byte, port int) (string, error) {
 	tu, err := url.Parse(meta.Announce)
 	if err != nil {
 		return "", err
@@ -60,7 +60,7 @@ func BuildTrackerURL(meta *TorrentMeta, peerId [20]byte) (string, error) {
 	params := url.Values{
 		"info_hash":  []string{string(meta.InfoHash[:])},
 		"peer_id":    []string{string(peerId[:])},
-		"port":       []string{strconv.Itoa(6881)},
+		"port":       []string{strconv.Itoa(port)},
 		"uploaded":   []string{"0"},
 		"downloaded": []string{"0"},
 		"left":       []string{strconv.Itoa(meta.Length)},

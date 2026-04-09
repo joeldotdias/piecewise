@@ -52,6 +52,10 @@ func (c *Client) ReadLoop(work *PieceWork, tracker *PieceTracker) ([]byte, error
 		hash:   work.hash,
 	}
 
+	if !c.Choked {
+		state.requestBlocks()
+	}
+
 	for {
 		if tracker.IsDownloaded(work.index) {
 			state.cancelInFlight()
@@ -209,6 +213,15 @@ func (c *Client) ReadInitialState(tracker *PieceTracker) error {
 	// leechers don't have to always send a bitfield message in the start
 	// so i think its fine not to return an error even if the first message
 	// is not bitfield
+
+	// added stuff for fix
+	msg, err = ReadMessage(c.Conn)
+	if err != nil {
+		return err
+	}
+	if msg != nil && msg.Id == MsgUnchoke {
+		c.Choked = false
+	}
 
 	return nil
 }

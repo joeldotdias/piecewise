@@ -80,3 +80,16 @@ func ReadMessage(r io.Reader) (*Message, error) {
 
 	return &m, nil
 }
+
+func FormatPiece(index int, begin int, block []byte) Message {
+	payload := make([]byte, 8+len(block))
+
+	binary.BigEndian.PutUint32(payload[0:4], uint32(index))
+	binary.BigEndian.PutUint32(payload[4:8], uint32(begin))
+	copy(payload[8:], block)
+
+	return Message{
+		Id:      MsgPiece,
+		Payload: payload,
+	}
+}

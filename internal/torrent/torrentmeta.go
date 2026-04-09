@@ -121,6 +121,17 @@ func ReadFrom(path string) (TorrentMeta, error) {
 	return meta, nil
 }
 
+func (t *TorrentMeta) PieceSize(index int) int {
+	if index == len(t.PieceHashes)-1 {
+		leftover := t.Length % t.PieceLength
+		if leftover != 0 {
+			return leftover
+		}
+	}
+
+	return t.PieceLength
+}
+
 func (t TorrentMeta) String() string {
 	return fmt.Sprintf(
 		"Torrent Metadata:\n"+

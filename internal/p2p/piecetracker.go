@@ -27,6 +27,23 @@ func (pt *PieceTracker) AddPeerBitfield(bf Bitfield) {
 	}
 }
 
+func (pt *PieceTracker) GetBitfield() []byte {
+	pt.mu.RLock()
+	defer pt.mu.RUnlock()
+
+	byteLen := int(math.Ceil(float64(len(pt.downloaded)) / 8.0))
+	bitfield := make([]byte, byteLen)
+
+	for i, downloaded := range pt.downloaded {
+		mask := byte(1 << (7 - i%8))
+		if downloaded {
+			bitfield[i/8] |= mask
+		}
+	}
+
+	return bitfield
+}
+
 func (pt *PieceTracker) PickNextPiece(peerBf Bitfield) (int, bool) {
 	pt.mu.Lock()
 	defer pt.mu.Unlock()

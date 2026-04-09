@@ -3,3 +3,6 @@ debian-13.3.0-amd64-DVD-1.iso
 debian-13.4.0-amd64-netinst.iso
 
 *.torrent
+*.pdf
+torrent-node
+*.iso
